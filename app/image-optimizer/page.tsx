@@ -1,8 +1,8 @@
 "use client"
 
 import { ImageUploader } from '../../components/ImageUploader'
-import { OptimizationOptions } from './components/OptimizationOptions'
-import { useOptimizationSettings } from './hooks/useOptimizationSettings'
+import { OptimizationOptions } from '../../components/OptimizationOptions'
+import { useOptimizationSettings } from '../../hooks/useOptimizationSettings'
 
 export default function ImageOptimizer() {
   const { settings, updateSettings } = useOptimizationSettings()

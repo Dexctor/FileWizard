@@ -58,20 +58,27 @@ export function Header() {
                 </div>
                 
                 <div className="absolute left-0 top-full pt-2 opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all">
-                  <div className="w-48 rounded-lg border bg-popover p-2 shadow-md">
+                  <div className="w-48 rounded-lg border bg-popover p-2 shadow-md space-y-1">
                     {category.items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         className={cn(
-                          "relative flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors",
+                          "relative flex items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors",
                           "hover:bg-accent hover:text-accent-foreground",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           pathname === item.href && "bg-accent text-accent-foreground",
                         )}
                       >
                         {item.name}
                         {item.badge && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          <Badge 
+                            variant="secondary" 
+                            className={cn(
+                              "text-[10px] px-1.5 py-0 h-4",
+                              "ml-2 font-medium"
+                            )}
+                          >
                             {item.badge}
                           </Badge>
                         )}
@@ -86,7 +93,7 @@ export function Header() {
 
         <div className="ml-auto flex items-center gap-4">
           <Link
-            href="https://github.com"
+            href="https://github.com/dexctor"
             target="_blank"
             rel="noreferrer"
             className="hidden sm:block"
@@ -120,10 +127,6 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button size="sm" className="h-8">
-            Démarrer
-          </Button>
         </div>
       </div>
     </header>

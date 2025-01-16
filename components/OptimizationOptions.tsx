@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { FormatSelector } from "@/components/ui/format-selector"
 import { Card, CardContent } from "@/components/ui/card"
-import { Settings } from "../types"
+import { Settings } from "../app/image-optimizer/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Info } from "lucide-react"
 import {

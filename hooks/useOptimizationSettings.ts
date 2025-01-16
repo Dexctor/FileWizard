@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { Settings } from '../types'
+import { Settings } from '../app/image-optimizer/types'
 
 const defaultSettings: Settings = {
   format: 'webp',

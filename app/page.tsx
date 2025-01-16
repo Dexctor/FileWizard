@@ -1,7 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+'use client';
+
 import { ImageUploader } from '@/components/ImageUploader';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 import { 
   Wand2, 
   Zap, 
@@ -12,6 +16,31 @@ import {
   ArrowRight,
   CheckCircle2
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3,
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+    }
+  }
+};
 
 const features = [
   {
@@ -52,88 +81,200 @@ export default function Home() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col">
       <div className="container max-w-5xl flex-1 py-12 sm:py-16">
-        <main className="h-full flex flex-col">
+        <motion.main 
+          className="h-full flex flex-col"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
           <div className="space-y-8 text-center mb-12">
             {/* Hero Section */}
             <div className="space-y-4">
-              <div className="flex items-center justify-center gap-2 mb-6">
-                <Badge variant="secondary" className="px-4 py-1 rounded-full">
-                  <Sparkles className="w-3.5 h-3.5 mr-2" />
+              <motion.div 
+                className="flex items-center justify-center gap-2 mb-6"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              >
+                <Badge 
+                  variant="secondary" 
+                  className={cn(
+                    "px-4 py-1.5 rounded-full", 
+                    "bg-gradient-to-r from-green-500/10 to-emerald-500/10",
+                    "border border-green-500/20",
+                    "text-emerald-500 font-medium",
+                    "shadow-sm shadow-green-500/10",
+                    "backdrop-blur-sm"
+                  )}
+                >
+                  <motion.div
+                    animate={{ 
+                      rotate: [0, 10, -10, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-2" />
+                  </motion.div>
                   Nouveau
                 </Badge>
-              </div>
+              </motion.div>
 
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary-foreground/20 blur-3xl -z-10" />
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary-foreground/20 blur-3xl -z-10"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [0.5, 0.8, 0.5] 
+                  }}
+                  transition={{ 
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "easeInOut" 
+                  }}
+                />
+                <motion.h1 
+                  className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight"
+                  variants={itemVariants}
+                >
                   <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
                     Transformez vos fichiers
                   </span>
                   <br />
                   <span className="text-primary relative">
                     comme par magie
-                    <Wand2 className="absolute -right-12 top-4 h-8 w-8 text-primary animate-pulse" />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ 
+                        opacity: [0, 1, 1],
+                        y: [10, 0, 0],
+                        filter: [
+                          'drop-shadow(0 0 0 rgba(255,255,255,0))',
+                          'drop-shadow(0 0 8px rgba(255,255,255,0.5))',
+                          'drop-shadow(0 0 0 rgba(255,255,255,0))'
+                        ]
+                      }}
+                      transition={{ 
+                        duration: 1.2,
+                        delay: 0.5,
+                        ease: [0.22, 1, 0.36, 1], // Cubic bezier pour une animation plus naturelle
+                        filter: {
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          times: [0, 0.5, 1]
+                        }
+                      }}
+                      className="group"
+                    >
+                      <Wand2 
+                        className={cn(
+                          "absolute -right-12 top-4 h-8 w-8",
+                          "text-primary transition-transform",
+                          "group-hover:rotate-12 group-hover:scale-110",
+                          "duration-300 ease-out"
+                        )} 
+                      />
+                    </motion.div>
                   </span>
-                </h1>
+                </motion.h1>
               </div>
 
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              <motion.p 
+                className="text-xl text-muted-foreground max-w-2xl mx-auto"
+                variants={itemVariants}
+              >
                 Convertissez et optimisez vos fichiers en quelques clics, sans compromis sur la qualité
-              </p>
+              </motion.p>
             </div>
             
             {/* Features Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              {features.map((feature) => (
-                <Card 
+            <motion.div 
+              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto"
+              variants={containerVariants}
+            >
+              {features.map((feature, index) => (
+                <motion.div
                   key={feature.title}
-                  className={`p-4 border ${feature.borderColor} ${feature.bgColor} transition-all hover:scale-105`}
+                  variants={itemVariants}
+                  whileHover={{ 
+                    scale: 1.05,
+                    transition: { type: "spring", stiffness: 300 }
+                  }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className={`p-2.5 rounded-xl ${feature.bgColor}`}>
-                      <feature.icon className={`h-5 w-5 ${feature.color}`} />
+                  <Card 
+                    className={`p-4 border ${feature.borderColor} ${feature.bgColor} transition-all`}
+                  >
+                    <div className="flex flex-col items-center text-center gap-2">
+                      <motion.div 
+                        className={`p-2.5 rounded-xl ${feature.bgColor}`}
+                        whileHover={{ rotate: 360 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <feature.icon className={`h-5 w-5 ${feature.color}`} />
+                      </motion.div>
+                      <div>
+                        <h3 className="font-semibold">{feature.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {feature.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* File Types Section */}
-            <div className="flex flex-col items-center gap-6 pt-4">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full border bg-card shadow-sm">
+            <motion.div 
+              className="flex flex-col items-center gap-6 pt-4"
+              variants={containerVariants}
+            >
+              <motion.div 
+                className="flex items-center gap-3 px-4 py-2 rounded-full border bg-card shadow-sm"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <ImageIcon className="h-4 w-4 text-primary" />
                 <p className="text-sm">
                   <span className="text-muted-foreground">Formats supportés :</span>
                   {" "}
                   <span className="font-medium">PNG, JPEG, WebP, AVIF, GIF, TIFF</span>
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="flex flex-wrap justify-center gap-2">
-                <Badge variant="outline" className="py-1 text-xs">
-                  <ArrowRight className="mr-1 h-3 w-3" /> Conversion instantanée
-                </Badge>
-                <Badge variant="outline" className="py-1 text-xs">
-                  <ArrowRight className="mr-1 h-3 w-3" /> Sans perte de qualité
-                </Badge>
-                <Badge variant="outline" className="py-1 text-xs">
-                  <ArrowRight className="mr-1 h-3 w-3" /> Traitement local
-                </Badge>
-              </div>
-            </div>
+              <motion.div 
+                className="flex flex-wrap justify-center gap-2"
+                variants={containerVariants}
+              >
+                {["Conversion instantanée", "Sans perte de qualité", "Traitement local"].map((text, i) => (
+                  <motion.div
+                    key={text}
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Badge variant="outline" className="py-1 text-xs">
+                      <ArrowRight className="mr-1 h-3 w-3" /> {text}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
           </div>
 
           {/* Upload Section */}
-          <div className="flex-1 flex flex-col">
+          <motion.div 
+            className="flex-1 flex flex-col"
+            variants={itemVariants}
+          >
             <ImageUploader />
-          </div>
-        </main>
+          </motion.div>
+        </motion.main>
       </div>
 
       {/* Footer */}
