@@ -13,10 +13,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 
 export function Header() {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  // Attendre que le composant soit monté pour éviter les erreurs d'hydratation
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navigation = [
     {
@@ -37,6 +44,10 @@ export function Header() {
       ]
     },
   ];
+
+  if (!mounted) {
+    return null; // Éviter le flash de contenu non hydraté
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

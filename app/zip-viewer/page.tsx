@@ -296,10 +296,10 @@ export default function ZipViewer() {
                   variant="secondary" 
                   className={cn(
                     "px-4 py-1.5 rounded-full", 
-                    "bg-gradient-to-r from-green-500/10 to-emerald-500/10",
-                    "border border-green-500/20",
-                    "text-emerald-500 font-medium",
-                    "shadow-sm shadow-green-500/10",
+                    "bg-gradient-to-r from-blue-500/10 to-indigo-500/10",
+                    "border border-blue-500/20",
+                    "text-green-500 font-medium",
+                    "shadow-sm shadow-blue-500/10",
                     "backdrop-blur-sm"
                   )}
                 >
