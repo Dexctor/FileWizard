@@ -4,6 +4,7 @@ import * as React from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useThemeColors } from "@/hooks/useThemeColors"
+import { ImageFormat } from "@/app/image-optimizer/types"
 
 const formats = [
   { value: 'webp', label: 'WebP' },
@@ -13,8 +14,8 @@ const formats = [
 ] as const
 
 interface FormatSelectorProps {
-  value: string
-  onValueChange: (value: string) => void
+  value: ImageFormat;
+  onValueChange: (value: ImageFormat) => void;
 }
 
 export function FormatSelector({ value, onValueChange }: FormatSelectorProps) {

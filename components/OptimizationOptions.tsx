@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { FormatSelector } from "@/components/ui/format-selector"
 import { Card, CardContent } from "@/components/ui/card"
-import { Settings } from "../app/image-optimizer/types"
+import { Settings, ImageFormat } from "../app/image-optimizer/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Info } from "lucide-react"
 import {
@@ -20,34 +20,34 @@ interface OptimizationOptionsProps {
   onSettingsChange: (settings: Settings) => void
 }
 
+type Preset = 'web' | 'print' | 'custom';
+
+const PRESETS: Record<Preset, Partial<Settings>> = {
+  web: {
+    quality: 80,
+    format: 'webp',
+    autoResize: true,
+    maxWidth: 1920,
+    stripMetadata: true,
+    optimizeForWeb: true,
+  },
+  print: {
+    quality: 100,
+    format: 'png',
+    autoResize: false,
+    stripMetadata: false,
+    optimizeForWeb: false,
+  },
+  custom: {} // Garde les paramètres actuels
+}
+
 export function OptimizationOptions({ settings, onSettingsChange }: OptimizationOptionsProps) {
-  const handlePresetSelect = (preset: 'web' | 'print' | 'custom') => {
-    switch (preset) {
-      case 'web':
-        onSettingsChange({
-          ...settings,
-          quality: 80,
-          format: 'webp',
-          autoResize: true,
-          maxWidth: 1920,
-          stripMetadata: true,
-          optimizeForWeb: true,
-        })
-        break
-      case 'print':
-        onSettingsChange({
-          ...settings,
-          quality: 100,
-          format: 'png',
-          autoResize: false,
-          stripMetadata: false,
-          optimizeForWeb: false,
-        })
-        break
-      default:
-        // Garde les paramètres actuels
-        break
-    }
+  const handlePresetSelect = (preset: Preset) => {
+    const presetSettings = PRESETS[preset];
+    onSettingsChange({
+      ...settings,
+      ...presetSettings
+    })
   }
 
   return (
@@ -100,8 +100,8 @@ export function OptimizationOptions({ settings, onSettingsChange }: Optimization
                   </Tooltip>
                 </div>
                 <FormatSelector
-                  value={settings.format ?? 'webp'}
-                  onValueChange={(format) => onSettingsChange({ ...settings, format })}
+                  value={(settings.format ?? 'webp') as ImageFormat}
+                  onValueChange={(format: string) => onSettingsChange({ ...settings, format: format as ImageFormat })}
                 />
               </div>
 

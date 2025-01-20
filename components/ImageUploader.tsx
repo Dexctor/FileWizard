@@ -2,32 +2,28 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import JSZip from 'jszip';
 import { ImagePreview } from './ImagePreview';
 import { FormatSelector } from '@/components/ui/format-selector';
-import { Settings } from '@/app/image-optimizer/types';
-import { Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { ImageFormat, Settings } from '@/app/image-optimizer/types';
+import { Upload, Image as ImageIcon, Loader2, Trash2, Download } from 'lucide-react';
 import { Card } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
+import { toast } from 'sonner';
 
 const SUPPORTED_FORMATS = {
-  'image/png': { ext: 'png', label: 'PNG' },
-  'image/jpeg': { ext: 'jpg', label: 'JPEG' },
-  'image/webp': { ext: 'webp', label: 'WebP' },
-  'image/avif': { ext: 'avif', label: 'AVIF' },
-  'image/gif': { ext: 'gif', label: 'GIF' },
-  'image/tiff': { ext: 'tiff', label: 'TIFF' },
+  'image/png': { ext: 'png', label: 'PNG', maxSize: 20 },
+  'image/jpeg': { ext: 'jpg', label: 'JPEG', maxSize: 20 },
+  'image/webp': { ext: 'webp', label: 'WebP', maxSize: 20 },
+  'image/avif': { ext: 'avif', label: 'AVIF', maxSize: 20 },
 } as const;
 
-const OUTPUT_FORMATS = [
-  { value: 'webp', label: 'WebP' },
-  { value: 'avif', label: 'AVIF' },
-  { value: 'jpeg', label: 'JPEG' },
-  { value: 'png', label: 'PNG' },
-] as const;
+// Taille maximale en MB
+const MAX_FILE_SIZE = 20;
+const MAX_FILES = 10;
 
 interface ImageFile {
   id: string;
@@ -48,28 +44,31 @@ interface ImageUploaderProps {
 export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps) {
   const [files, setFiles] = useState<ImageFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
-  const [outputFormat, setOutputFormat] = useState<string>('webp');
+  const [outputFormat, setOutputFormat] = useState<ImageFormat>('webp');
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  const validateFile = useCallback((file: File) => {
+    if (!Object.keys(SUPPORTED_FORMATS).includes(file.type)) {
+      toast.error(`Format non supporté: ${file.type}`);
+      return false;
+    }
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
+    const sizeInMB = file.size / (1024 * 1024);
+    if (sizeInMB > MAX_FILE_SIZE) {
+      toast.error(`Le fichier ${file.name} dépasse ${MAX_FILE_SIZE}MB`);
+      return false;
+    }
 
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    await handleFiles(droppedFiles);
-  };
+    return true;
+  }, []);
 
-  const handleFiles = async (newFiles: File[]) => {
-    const validFiles = newFiles.filter(file => file.type in SUPPORTED_FORMATS);
+  const handleFiles = useCallback(async (newFiles: File[]) => {
+    if (files.length + newFiles.length > MAX_FILES) {
+      toast.error(`Maximum ${MAX_FILES} fichiers autorisés`);
+      return;
+    }
+
+    const validFiles = newFiles.filter(validateFile);
     
     const newImageFiles: ImageFile[] = validFiles.map(file => ({
       id: crypto.randomUUID(),
@@ -80,11 +79,14 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
     }));
 
     setFiles(prev => [...prev, ...newImageFiles]);
-  };
+    
+    if (validFiles.length > 0) {
+      toast.success(`${validFiles.length} fichier(s) ajouté(s)`);
+    }
+  }, [files.length, validateFile]);
 
   const convertFile = async (imageFile: ImageFile): Promise<ImageFile> => {
     try {
-      console.log('Début de la conversion:', imageFile.file.name);
       const formData = new FormData();
       formData.append('image', imageFile.file);
       formData.append('format', outputFormat);
@@ -92,33 +94,33 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
         formData.append('settings', JSON.stringify(settings));
       }
 
-      console.log('Format de sortie:', outputFormat);
-      console.log('Settings:', settings);
-
       const response = await fetch('/api/convert', {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Réponse erreur:', errorData);
-        throw new Error(errorData.error || 'Erreur de conversion');
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      // Vérification du Content-Type
+      const contentType = response.headers.get('Content-Type');
+      const expectedContentType = `image/${outputFormat}`;
+      
+      if (!contentType?.includes(expectedContentType)) {
+        throw new Error(`Format de sortie incorrect: ${contentType}`);
       }
 
       const blob = await response.blob();
-      console.log('Taille du blob:', blob.size);
-      console.log('Type du blob:', blob.type);
-
+      
       if (blob.size === 0) {
         throw new Error('Le fichier converti est vide');
       }
 
-      // Vérifier que le type MIME correspond au format demandé
-      const expectedMimeType = `image/${outputFormat}`;
-      if (blob.type !== expectedMimeType) {
-        console.error(`Type MIME incorrect: ${blob.type}, attendu: ${expectedMimeType}`);
-        throw new Error('Format de sortie incorrect');
+      // Vérification supplémentaire du type MIME du blob
+      if (blob.type !== expectedContentType) {
+        throw new Error(`Type MIME incorrect: ${blob.type}, attendu: ${expectedContentType}`);
       }
 
       const url = URL.createObjectURL(blob);
@@ -131,7 +133,7 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
         convertedUrl: url,
       };
     } catch (error) {
-      console.error('Erreur de conversion détaillée:', error);
+      console.error('Erreur de conversion:', error);
       return {
         ...imageFile,
         status: 'error',
@@ -145,64 +147,97 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
     setIsConverting(true);
     const pendingFiles = files.filter(f => f.status === 'pending');
     
-    for (let i = 0; i < pendingFiles.length; i++) {
-      const file = pendingFiles[i];
-      setFiles(prev => prev.map(f => 
-        f.id === file.id ? { ...f, status: 'converting', progress: 0 } : f
-      ));
-
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setFiles(prev => prev.map(f =>
-          f.id === file.id && f.status === 'converting'
-            ? { ...f, progress: Math.min(f.progress + 10, 90) }
-            : f
+    try {
+      for (const file of pendingFiles) {
+        setFiles(prev => prev.map(f => 
+          f.id === file.id ? { ...f, status: 'converting', progress: 0 } : f
         ));
-      }, 200);
 
-      const convertedFile = await convertFile(file);
-      clearInterval(progressInterval);
+        const progressInterval = setInterval(() => {
+          setFiles(prev => prev.map(f =>
+            f.id === file.id && f.status === 'converting'
+              ? { ...f, progress: Math.min(f.progress + 10, 90) }
+              : f
+          ));
+        }, 200);
 
-      setFiles(prev => prev.map(f => 
-        f.id === file.id ? convertedFile : f
-      ));
+        const convertedFile = await convertFile(file);
+        clearInterval(progressInterval);
+
+        setFiles(prev => prev.map(f => 
+          f.id === file.id ? convertedFile : f
+        ));
+
+        if (convertedFile.status === 'done') {
+          toast.success(`${file.file.name} converti avec succès`);
+        } else {
+          toast.error(`Erreur lors de la conversion de ${file.file.name}`);
+        }
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la conversion');
+    } finally {
+      setIsConverting(false);
     }
-    setIsConverting(false);
   };
 
   const downloadZip = async () => {
-    const zip = new JSZip();
-    const convertedFiles = files.filter(f => f.status === 'done' && f.convertedUrl);
+    try {
+      const zip = new JSZip();
+      const convertedFiles = files.filter(f => f.status === 'done' && f.convertedUrl);
 
-    for (const file of convertedFiles) {
-      const response = await fetch(file.convertedUrl!);
-      const blob = await response.blob();
-      const fileName = `${file.file.name.replace(/\.[^/.]+$/, '')}.${outputFormat}`;
-      zip.file(fileName, blob);
+      for (const file of convertedFiles) {
+        const response = await fetch(file.convertedUrl!);
+        const blob = await response.blob();
+        
+        // Meilleure gestion du nom de fichier
+        const originalName = file.file.name;
+        const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
+        const safeBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const fileName = `${safeBaseName}.${outputFormat}`;
+        
+        zip.file(fileName, blob);
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const zipName = `images_converties_${timestamp}.zip`;
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = zipName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Téléchargement démarré');
+    } catch (error) {
+      toast.error('Erreur lors de la création du ZIP');
     }
-
-    const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'converted_images.zip';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const removeFile = (id: string) => {
-    setFiles(prev => prev.filter(f => f.id !== id));
+    setFiles(prev => {
+      const file = prev.find(f => f.id === id);
+      if (file?.convertedUrl) {
+        URL.revokeObjectURL(file.convertedUrl);
+      }
+      return prev.filter(f => f.id !== id);
+    });
   };
 
   const clearCompleted = () => {
-    setFiles(prev => prev.filter(f => f.status !== 'done'));
+    setFiles(prev => {
+      prev.forEach(f => {
+        if (f.convertedUrl) {
+          URL.revokeObjectURL(f.convertedUrl);
+        }
+      });
+      return prev.filter(f => f.status !== 'done');
+    });
   };
-
-  const pendingCount = files.filter(f => f.status === 'pending').length;
-  const completedCount = files.filter(f => f.status === 'done').length;
-  const hasCompletedFiles = completedCount > 0;
-  const hasPendingFiles = pendingCount > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -215,9 +250,19 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
             isDragging && "border-primary bg-primary/5",
             isConverting && "pointer-events-none opacity-50"
           )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            await handleFiles(Array.from(e.dataTransfer.files));
+          }}
         >
           <div className="flex flex-col items-center gap-4 max-w-md text-center">
             <div className={cn(
@@ -295,19 +340,32 @@ export function ImageUploader({ settings, onSettingsChange }: ImageUploaderProps
                       disabled={isConverting}
                       className="relative"
                     >
-                      {isConverting && (
+                      {isConverting ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
                       )}
-                      Convertir tout
+                      Convertir {files.filter(f => f.status === 'pending').length} fichier(s)
                     </Button>
                   )}
+                  
                   {files.some(f => f.status === 'done') && (
-                    <Button
-                      variant="outline"
-                      onClick={downloadZip}
-                    >
-                      Télécharger ZIP
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={downloadZip}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Télécharger ZIP
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={clearCompleted}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Nettoyer
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>

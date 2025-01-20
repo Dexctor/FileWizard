@@ -9,14 +9,11 @@ const defaultSettings: Settings = {
   autoResize: true,
   maxWidth: 2000,
   stripMetadata: true,
+  optimizeForWeb: true,
 }
 
-export function useOptimizationSettings() {
+export const useOptimizationSettings = () => {
   const [settings, setSettings] = useState<Settings>(defaultSettings)
-
-  const updateSettings = (newSettings: Settings) => {
-    setSettings(newSettings)
-  }
-
-  return { settings, updateSettings }
+  
+  return { settings, updateSettings: setSettings }
 } 
